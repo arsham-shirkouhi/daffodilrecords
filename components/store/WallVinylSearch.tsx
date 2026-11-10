@@ -141,7 +141,7 @@ export function WallVinylSearch({
       setStatus("Searching…");
       void searchCatalog({ q: needle, preview: true })
         .then((body) => {
-          const next = body.results.slice(0, SLOT_COUNT).map((release, index) => ({
+          const next: Slot[] = body.results.slice(0, SLOT_COUNT).map((release, index) => ({
             key: `hit-${release.id}-${index}`,
             release,
             coverReady: !release.cover_image,
