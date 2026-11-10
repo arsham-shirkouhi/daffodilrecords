@@ -6,13 +6,12 @@ import { getSession } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   await connection();
-  const appUrl = (() => {
-    try {
-      return getAppUrl();
-    } catch {
-      return process.env.APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
-    }
-  })();
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getAppUrl();
+  } catch {
+    /* fall back for local misconfig */
+  }
   const fail = (code: string) => NextResponse.redirect(new URL(`/?error=${code}`, appUrl));
 
   try {
