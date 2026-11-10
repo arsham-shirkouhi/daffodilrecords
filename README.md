@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Record Store
 
-## Getting Started
+A small shop for a Discogs vinyl collection. Log in with Discogs, or type a public username, and flip through the records like crates in an independent store.
 
-First, run the development server:
+The name on the neon sign lives in one place: `SHOP_OWNER_NAME` in [`lib/config.ts`](lib/config.ts). Change that line and the sign, the browser title, and the door all follow.
+
+## 1. Register a Discogs app
+
+1. Open [Discogs developer settings](https://www.discogs.com/settings/developers) and create an application.
+2. Set the callback URL to `http://localhost:3000/api/auth/callback`.
+
+Discogs uses that exact URL when it sends the user back after they approve access. The consumer secret stays on the server. The browser never sees it.
+
+## 2. Add the keys
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+On Windows PowerShell:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+Copy-Item .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in:
 
-## Learn More
+- `DISCOGS_CONSUMER_KEY` and `DISCOGS_CONSUMER_SECRET` from the Discogs app
+- `SESSION_SECRET`, at least 32 characters
+- `APP_URL=http://localhost:3000`
 
-To learn more about Next.js, take a look at the following resources:
+## 3. Run it
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000). **Log in with Discogs** walks through OAuth and lands in the shop. **Just browse a username** loads a public collection with the app key and secret, without signing anyone in.
 
-## Deploy on Vercel
+The server logs the Discogs identity response when a login finishes. Look for `[record-store] Discogs identity:` in the terminal.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 4. Deploy to Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Import the project in Vercel.
+2. Add the same environment variables. Set `APP_URL` to the production origin, for example `https://your-shop.vercel.app`, with no trailing slash.
+3. In the Discogs app settings, add the production callback URL: `https://your-shop.vercel.app/api/auth/callback`.
+4. Redeploy.
+
+The barcode scanner uses the phone camera. Browsers only allow that on a secure page, so `http://localhost` works on the computer you are using, and a phone needs HTTPS. Test the scanner on the deployed site, or through a tunnel such as ngrok.
+
+Local collections are cached in memory on the server for a few minutes. A new serverless instance starts with an empty cache, which is expected. Very large collections make several Discogs requests. The shop reads `X-Discogs-Ratelimit-Remaining`, slows down when the budget gets low, and retries if Discogs answers with 429. On Vercel the collection route allows up to 60 seconds. A collection of many thousands of records may need a plan with a longer function duration.
+
+## Shop views
+
+- **Crates** groups sleeves by genre. Drag a crate sideways, or swipe it on a phone.
+- **Wall** hangs the twelve newest additions above the rest.
+- **Shelves** shows spines in alphabetical order. Names that start with “The” are filed by the next word.
+- **Dig for something** opens a random record from whatever is currently on the table.
+- Price sort looks up marketplace lows for the first 36 matches so the shop does not hammer Discogs. Opening a record always loads its current low price and how many copies are for sale.
