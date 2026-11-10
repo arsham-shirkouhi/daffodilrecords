@@ -72,16 +72,28 @@ function requireConsumer() {
 }
 
 export function userAgent(): string {
-  const appUrl = process.env.APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
-  return `RecordStoreApp/1.0 +${appUrl}`;
+  return `RecordStoreApp/1.0 +${resolveAppUrl() ?? "http://localhost:3000"}`;
+}
+
+/** Prefer APP_URL; on Vercel fall back to the deployment host. */
+function resolveAppUrl(): string | null {
+  const configured = process.env.APP_URL?.trim().replace(/\/$/, "");
+  if (configured) return configured;
+  const vercel = process.env.VERCEL_URL?.trim().replace(/\/$/, "");
+  if (vercel) return vercel.startsWith("http") ? vercel : `https://${vercel}`;
+  return null;
 }
 
 export function getAppUrl(): string {
-  const raw = process.env.APP_URL?.trim();
-  if (!raw) {
-    throw new DiscogsError("APP_URL is missing from .env.local.", 500, "config");
+  const url = resolveAppUrl();
+  if (!url) {
+    throw new DiscogsError(
+      "APP_URL is missing. Set it to your site URL (e.g. https://your-app.vercel.app).",
+      500,
+      "config",
+    );
   }
-  return raw.replace(/\/$/, "");
+  return url;
 }
 
 function oauthClient() {

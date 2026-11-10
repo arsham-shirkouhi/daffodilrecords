@@ -7,7 +7,13 @@ import { unstable_rethrow } from "next/navigation";
 
 export async function GET() {
   await connection();
-  const fallback = process.env.APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const fallback = (() => {
+    try {
+      return getAppUrl();
+    } catch {
+      return "http://localhost:3000";
+    }
+  })();
   try {
     const appUrl = getAppUrl();
     const callback = `${appUrl}/api/auth/callback`;

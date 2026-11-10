@@ -1,12 +1,18 @@
 import { unstable_rethrow } from "next/navigation";
 import { connection, type NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { fetchAccessToken, fetchIdentity } from "@/lib/discogs";
+import { fetchAccessToken, fetchIdentity, getAppUrl } from "@/lib/discogs";
 import { getSession } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   await connection();
-  const appUrl = process.env.APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const appUrl = (() => {
+    try {
+      return getAppUrl();
+    } catch {
+      return process.env.APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    }
+  })();
   const fail = (code: string) => NextResponse.redirect(new URL(`/?error=${code}`, appUrl));
 
   try {
