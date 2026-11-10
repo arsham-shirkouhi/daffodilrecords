@@ -65,12 +65,7 @@ export function FavoritesWall({
     <div className="wall-room">
       {/* Phone app shelf — shown only on small screens */}
       <div className="wall-mobile">
-        <header className="wall-mobile-hero">
-          <p className="wall-mobile-kicker">Listening room</p>
-          <h1 className="wall-mobile-title">Favourites</h1>
-        </header>
-
-        <div className="wall-mobile-rail" aria-label="Favourite records">
+        <div className="wall-mobile-rail" aria-label="Records">
           {mobilePages.map((page, pageIndex) => (
             <div key={`page-${pageIndex}`} className="wall-mobile-page">
               <div className="wall-mobile-grid">
@@ -94,7 +89,7 @@ export function FavoritesWall({
           ))}
         </div>
         {mobilePages.length > 1 ? (
-          <p className="wall-mobile-hint">Swipe for more · {count} sleeves</p>
+          <p className="wall-mobile-hint">Swipe · {count}</p>
         ) : null}
       </div>
 

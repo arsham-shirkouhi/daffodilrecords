@@ -111,12 +111,31 @@ export function AddRecordDialog({
 
     let stopped = false;
     let stop: (() => void) | undefined;
+    const warn = console.warn.bind(console);
+    console.warn = (...args: unknown[]) => {
+      const first = args[0];
+      if (typeof first === "string" && first.includes("MultiFormatReader:")) return;
+      warn(...args);
+    };
+
     void (async () => {
       try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const reader = new BrowserMultiFormatReader();
-        const controls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
-          if (!result || stopped) return;
+        const { BrowserMultiFormatReader, BarcodeFormat } = await import("@zxing/browser");
+        const reader = new BrowserMultiFormatReader(undefined, {
+          delayBetweenScanAttempts: 250,
+          delayBetweenScanSuccess: 1200,
+        });
+        // Vinyl barcodes are retail 1D codes — skip QR/MicroQR noise.
+        reader.possibleFormats = [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+        ];
+        const controls = await reader.decodeFromVideoDevice(undefined, video, (result, error) => {
+          if (stopped) return;
+          if (error || !result) return;
           stopped = true;
           const scanned = result.getText();
           setCode(scanned);
@@ -131,6 +150,7 @@ export function AddRecordDialog({
     return () => {
       stopped = true;
       stop?.();
+      console.warn = warn;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
