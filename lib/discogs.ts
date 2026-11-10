@@ -72,28 +72,22 @@ function requireConsumer() {
 }
 
 export function userAgent(): string {
-  return `RecordStoreApp/1.0 +${resolveAppUrl() ?? "http://localhost:3000"}`;
-}
-
-/** Prefer APP_URL; on Vercel fall back to the deployment host. */
-function resolveAppUrl(): string | null {
-  const configured = process.env.APP_URL?.trim().replace(/\/$/, "");
-  if (configured) return configured;
-  const vercel = process.env.VERCEL_URL?.trim().replace(/\/$/, "");
-  if (vercel) return vercel.startsWith("http") ? vercel : `https://${vercel}`;
-  return null;
+  return `RecordStoreApp/1.0 +${resolvePublicAppUrl()}`;
 }
 
 export function getAppUrl(): string {
-  const url = resolveAppUrl();
-  if (!url) {
-    throw new DiscogsError(
-      "APP_URL is missing. Set it to your site URL (e.g. https://your-app.vercel.app).",
-      500,
-      "config",
-    );
+  return resolvePublicAppUrl();
+}
+
+function resolvePublicAppUrl(): string {
+  // Inline mirror of lib/app-url for the Discogs user-agent (no request available).
+  const configured = process.env.APP_URL?.trim().replace(/\/$/, "");
+  if (configured && !(process.env.VERCEL === "1" && /localhost|127\.0\.0\.1/.test(configured))) {
+    return configured;
   }
-  return url;
+  const vercel = process.env.VERCEL_URL?.trim().replace(/\/$/, "");
+  if (vercel) return vercel.startsWith("http") ? vercel : `https://${vercel}`;
+  return configured || "http://localhost:3000";
 }
 
 function oauthClient() {

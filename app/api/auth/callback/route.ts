@@ -1,17 +1,13 @@
 import { unstable_rethrow } from "next/navigation";
 import { connection, type NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { fetchAccessToken, fetchIdentity, getAppUrl } from "@/lib/discogs";
+import { resolveAppUrl } from "@/lib/app-url";
+import { fetchAccessToken, fetchIdentity } from "@/lib/discogs";
 import { getSession } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   await connection();
-  let appUrl = "http://localhost:3000";
-  try {
-    appUrl = getAppUrl();
-  } catch {
-    /* fall back for local misconfig */
-  }
+  const appUrl = resolveAppUrl(request);
   const fail = (code: string) => NextResponse.redirect(new URL(`/?error=${code}`, appUrl));
 
   try {
